@@ -33,7 +33,7 @@
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-html { scroll-behavior: smooth; background: var(--ink-0); overflow-x: clip; }
+html { scroll-behavior: smooth; background: var(--ink-0); overflow-x: clip; overscroll-behavior-y: contain; } /* no pull-to-refresh / bounce: a stray swipe at the top used to reload the page back to the entry gate */
 body {
   margin: 0; background: var(--ink-0); color: var(--parch);
   font: 400 1.08rem/1.6 var(--f-body);
@@ -212,7 +212,7 @@ body.locked { overflow: hidden; }
   min-width: 0;
 }
 .frame > .crest { position: absolute; left: 50%; top: -20px; width: min(320px, 80%); height: auto; aspect-ratio: 9 / 1; translate: -50% 0; overflow: visible; pointer-events: none; }
-.frame > .crest.foot { top: calc(100% - 7px); bottom: auto; width: min(240px, 60%); height: 14px; max-height: 14px; aspect-ratio: auto; }
+.frame > .crest.crest-foot { top: calc(100% - 7px); bottom: auto; width: min(240px, 60%); height: 14px; max-height: 14px; aspect-ratio: auto; }
 .cr-line { fill: none; stroke: var(--rc); stroke-width: 2; }
 .cr-line.thin { stroke-width: 1; stroke-opacity: .55; }
 .cr-fill { fill: #0d0b0f; stroke: var(--rc); stroke-width: 1.5; }

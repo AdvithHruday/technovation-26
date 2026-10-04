@@ -113,7 +113,7 @@
     <path d="M8 26 h40 M312 26 h40" class="cr-hatch"/>
     <circle cx="4" cy="30" r="3" class="cr-dot"/><circle cx="356" cy="30" r="3" class="cr-dot"/>
   </svg>`;
-  const foot = `<svg class="crest foot" viewBox="0 0 360 24" aria-hidden="true">
+  const foot = `<svg class="crest crest-foot" viewBox="0 0 360 24" aria-hidden="true">
     <path d="M0 6 H130 L146 18 H214 L230 6 H360" class="cr-line"/>
     <path d="M174 12 L180 6 L186 12 L180 18 Z" class="cr-gem"/>
   </svg>`;
