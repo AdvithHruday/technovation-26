@@ -325,7 +325,7 @@
     if (!first) {
       $("#travel-text").textContent = r.v === "realm" ? `Travelling to ${REALM[r.id].name}` : r.v === "trial" ? `Entering the trial` : "Travelling";
       $("#travel").classList.add("on"); AUDIO.ui("travel");
-      await new Promise(res => setTimeout(res, 520));
+      await new Promise(res => setTimeout(res, matchMedia("(hover: none)").matches ? 200 : 520));
     }
     timers.forEach(clearInterval); timers = [];
     view.innerHTML = r.v === "realm" || r.v === "trial" ? V[r.v](r.id) : V[r.v]();
@@ -411,7 +411,7 @@
     // loading
     const bar = $("#gate-bar"); let pct = 0;
     const logo = new Promise(r => { const i = new Image(); i.onload = i.onerror = r; i.src = "assets/logo-white.webp"; });
-    const ready = Promise.all([logo, document.fonts ? document.fonts.ready : 0, new Promise(r => setTimeout(r, 1800))]);
+    const ready = Promise.all([logo, document.fonts ? document.fonts.ready : 0, new Promise(r => setTimeout(r, matchMedia("(hover: none)").matches ? 1100 : 1800))]);
     const lt = setInterval(() => { pct = Math.min(92, pct + Math.random() * 9); bar.style.width = pct + "%"; }, 120);
     ready.then(() => { clearInterval(lt); bar.style.width = "100%"; setTimeout(() => { $("#gate-load").hidden = true; $("#gate-actions").hidden = false; $("#enter-sound").focus(); }, 350); });
     async function enter(sound) {

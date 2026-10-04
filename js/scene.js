@@ -11,6 +11,14 @@
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const TOUCH = matchMedia("(hover: none)").matches || innerWidth < 760;
 
+  // Android/iOS: the visible viewport grows/shrinks as the address bar hides while scrolling. A canvas sized to it
+  // visibly stretches and jumps ("glitching background"), so size the world to the large viewport (100lvh) instead.
+  const probe = document.createElement("div");
+  probe.style.cssText = "position:fixed;left:0;top:0;width:0;height:100lvh;pointer-events:none;visibility:hidden";
+  document.body.appendChild(probe);
+  const bigH = () => Math.max(probe.offsetHeight || 0, innerHeight);
+  let lastFx = 0;
+
   let W = 0, H = 0, DPR = 1, mode = null, parts = [], anchors = {}, t0 = performance.now();
   let mx = 0, my = 0, tmx = 0, tmy = 0;
   const imgCache = {};
@@ -257,16 +265,18 @@
   }
   function count(kind) {
     const a = W * H / (1440 * 900);
-    return Math.round(({ embers: 90, fire: 140, dust: 110, water: 160, air: 40, ether: 120 })[kind] * Math.max(0.35, Math.min(1.4, a)) * (TOUCH ? 0.6 : 1));
+    return Math.round(({ embers: 90, fire: 140, dust: 110, water: 160, air: 40, ether: 120 })[kind] * Math.max(0.35, Math.min(1.4, a)) * (TOUCH ? 0.4 : 1));
   }
   let arcs = [], nextArc = 0, shoot = null;
 
   function step(now) {
     const t = (now - t0) / 1000;
     mx += (tmx - mx) * 0.05; my += (tmy - my) * 0.05;
-    const tr = `translate3d(${(-mx * 14).toFixed(2)}px,${(-my * 9).toFixed(2)}px,0) scale(1.04)`;
-    bgA.style.transform = bgB.style.transform = imgLayer.style.transform = tr;
-    fx.style.transform = `translate3d(${(-mx * 26).toFixed(2)}px,${(-my * 16).toFixed(2)}px,0)`;
+    if (!TOUCH) { // parallax follows the mouse; phones have none, so don't touch styles every frame
+      const tr = `translate3d(${(-mx * 14).toFixed(2)}px,${(-my * 9).toFixed(2)}px,0) scale(1.04)`;
+      bgA.style.transform = bgB.style.transform = imgLayer.style.transform = tr;
+      fx.style.transform = `translate3d(${(-mx * 26).toFixed(2)}px,${(-my * 16).toFixed(2)}px,0)`;
+    }
     fctx.clearRect(0, 0, W, H);
     const th = THEMES[mode]; if (!th) return;
     const kind = th.fx, [cr, cg, cb] = th.fxColor;
@@ -300,7 +310,7 @@
         if (p.x < 0 || p.x > W || p.y < 0 || p.y > H) parts[i] = spawn(kind);
       }
     }
-    if (kind === "ether") {
+    if (kind === "ether" && !TOUCH) {
       fctx.lineWidth = 0.6;
       for (let i = 0; i < parts.length; i += 2) for (let j = i + 2; j < parts.length; j += 2) {
         const a = parts[i], b = parts[j], d = Math.hypot(a.x - b.x, a.y - b.y);
@@ -321,7 +331,7 @@
       if (now > nextArc) { const tw = anchors.towers, i = Math.floor(Math.random() * (tw.length - 1)); arcs.push({ a: tw[i], b: tw[i + 1], life: 14, seed: Math.random() * 1000 }); nextArc = now + 900 + Math.random() * 2600; }
       for (let i = arcs.length - 1; i >= 0; i--) { const z = arcs[i]; z.life--; if (z.life <= 0) { arcs.splice(i, 1); continue; } bolt(z.a, z.b, z.life / 14); }
     }
-    if (mode === "home" || mode === "earth") { // drifting fog bands
+    if (!TOUCH && (mode === "home" || mode === "earth")) { // drifting fog bands
       for (let k = 0; k < 3; k++) { const y = H * (0.7 + k * 0.1), x = ((t * (8 + k * 5)) % (W + 800)) - 400; glowFx(x, y, 380, "rgba(255,210,170,.05)"); glowFx((x + W * 0.6) % (W + 800) - 400, y + 20, 300, "rgba(255,210,170,.04)"); }
     }
   }
@@ -338,7 +348,8 @@
   /* ---------------- control ---------------- */
   function size() {
     DPR = Math.min(TOUCH ? 1.25 : 1.5, window.devicePixelRatio || 1);
-    W = innerWidth; H = innerHeight;
+    W = innerWidth; H = bigH();
+    world.style.height = H + "px";
     [bgA, bgB].forEach(c => { c.width = W * DPR; c.height = H * DPR; });
     fx.width = W; fx.height = H;
   }
@@ -352,7 +363,11 @@
   }
 
   let raf = 0, running = false;
-  function loop(now) { step(now); raf = requestAnimationFrame(loop); }
+  function loop(now) {
+    raf = requestAnimationFrame(loop);
+    if (TOUCH && now - lastFx < 32) return; // ~30fps is plenty for drifting dust and keeps phones cool
+    lastFx = now; step(now);
+  }
   function start() { if (running || reduce) return; running = true; raf = requestAnimationFrame(loop); }
   function stop() { running = false; cancelAnimationFrame(raf); }
 
@@ -375,8 +390,8 @@
   }
 
   let rt; addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => {
-    // phones fire resize when the address bar shows/hides; only repaint on real size changes
-    if (Math.abs(innerWidth - W) < 2 && Math.abs(innerHeight - H) < 160) return;
+    // phones fire resize when the address bar shows/hides; the world is sized to 100lvh so only real changes repaint
+    if (Math.abs(innerWidth - W) < 2 && Math.abs(bigH() - H) < 2) return;
     size(); const m = mode; mode = null; set(m); }, 200); });
   addEventListener("pointermove", e => { tmx = e.clientX / innerWidth - 0.5; tmy = e.clientY / innerHeight - 0.5; }, { passive: true });
   document.addEventListener("visibilitychange", () => document.hidden ? stop() : start());

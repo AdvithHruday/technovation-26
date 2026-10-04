@@ -9,9 +9,10 @@
   const CHORDS = [[50, 53, 57, 62], [46, 50, 53, 58], [43, 46, 50, 55], [45, 49, 52, 57]];
   const BELL = [74, 77, 79, 81, 84, 86, 89];
 
+  const LITE = matchMedia("(hover: none)").matches; // phones: shorter, mono reverb (convolution is the costliest part of the score)
   function impulse(sec, decay) {
-    const len = ctx.sampleRate * sec, b = ctx.createBuffer(2, len, ctx.sampleRate);
-    for (let c = 0; c < 2; c++) { const d = b.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay); }
+    const ch = LITE ? 1 : 2, len = Math.floor(ctx.sampleRate * sec), b = ctx.createBuffer(ch, len, ctx.sampleRate);
+    for (let c = 0; c < ch; c++) { const d = b.getChannelData(c); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decay); }
     return b;
   }
   function noiseBuf(sec) { const b = ctx.createBuffer(1, ctx.sampleRate * sec, ctx.sampleRate), d = b.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1; return b; }
@@ -20,7 +21,7 @@
     ctx = new (window.AudioContext || window.webkitAudioContext)();
     const comp = ctx.createDynamicsCompressor(); comp.threshold.value = -18; comp.ratio.value = 4;
     master = ctx.createGain(); master.gain.value = 0; master.connect(comp); comp.connect(ctx.destination);
-    verb = ctx.createConvolver(); verb.buffer = impulse(4.5, 2.6);
+    verb = ctx.createConvolver(); verb.buffer = impulse(LITE ? 2.2 : 4.5, 2.6);
     const wet = ctx.createGain(); wet.gain.value = 0.55; verb.connect(wet); wet.connect(master);
     music = ctx.createGain(); music.gain.value = 0.8; music.connect(master); music.connect(verb);
     sfx = ctx.createGain(); sfx.gain.value = 0.5; sfx.connect(master); sfx.connect(verb);

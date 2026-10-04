@@ -469,6 +469,16 @@ body.locked { overflow: hidden; }
 @media (max-width: 880px), (hover: none) {
   .frame { backdrop-filter: none; background: linear-gradient(180deg, rgba(18,15,20,.93), rgba(8,7,10,.95)); }
   #dock { backdrop-filter: none; }
+  /* LITE MODE: no endless decorative animation or heavy effects. Dozens of spinning SVGs, blend modes and
+     filters were being repainted every frame on top of the animated canvas, which is what made phones lag. */
+  .medal-gear, .tc-art .tc-gear, .sg-rot-a, .sg-rot-b, .sg-rot-c, .sg-rot-d, .travel-sigil .sigil, .gate-logo, .rise { animation: none; }
+  #scene-fx { mix-blend-mode: normal; }
+  #vignette::after { display: none; }
+  .frame { box-shadow: inset 0 0 0 4px rgba(0,0,0,.45), inset 0 0 0 5px rgba(212,175,90,.16), 0 8px 18px rgba(0,0,0,.5); }
+  .cr-gem, .sg-node, .realm-node .medal, .realm-node:hover .medal, .realm-node.on .medal { filter: none; }
+  .hero-logo { filter: drop-shadow(0 0 14px rgba(255,200,120,.3)); }
+  .tcard { transition: none; }
+  .tc-art .ticon, .trial-emblem .ticon { filter: none; }
   /* the SVG 'erode' filter (feTurbulence) is slow on phones and chews small headings until they're hard to read */
   .hero-title { filter: drop-shadow(0 4px 0 rgba(0,0,0,.6)) drop-shadow(0 0 28px rgba(255,180,90,.35)); }
   .realm-title { filter: drop-shadow(0 6px 0 rgba(0,0,0,.6)) drop-shadow(0 0 40px color-mix(in srgb, var(--rc) 55%, transparent)); }
@@ -500,6 +510,23 @@ body.locked { overflow: hidden; }
   .trial-head { grid-template-columns: minmax(0, 1fr); justify-items: center; text-align: center; }
   .trial-head .tc-tags, .trial-head .btn-row { justify-content: center; }
   #drone { width: 64px; }
+  /* readability: micro-text was 10-11px with wide tracking */
+  .tag { font-size: .74rem; padding: 7px 10px; }
+  .tc-bar { font-size: .8rem; }
+  .count span { font-size: .76rem; letter-spacing: .2em; }
+  .realm-node .rn-label small, .fact span, .person .role, .stat span, .kicker { font-size: .78rem; }
+  .step .when, .soon { font-size: .86rem; }
+  /* tap targets */
+  .crumbs a { padding: 10px 6px; margin: -10px -6px; }
+  .foot nav a { padding: 10px 4px; }
+  /* menu button turns into a close icon */
+  .burger i { transition: transform .25s, opacity .2s; }
+  #menu-toggle[aria-expanded="true"] .burger i:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  #menu-toggle[aria-expanded="true"] .burger i:nth-child(2) { opacity: 0; }
+  #menu-toggle[aria-expanded="true"] .burger i:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+  /* text sits straight on the scenery (esp. bright Air realm): darken it for contrast */
+  #vignette { background: radial-gradient(ellipse 90% 80% at 50% 45%, rgba(0,0,0,.25) 30%, rgba(0,0,0,.7) 100%), linear-gradient(180deg, rgba(0,0,0,.6) 0, rgba(0,0,0,.3) 18%, rgba(0,0,0,.3) 60%, rgba(0,0,0,.8) 100%); }
+  .realm-line, .realm-hero .lede, .trial-head .lede { text-shadow: 0 1px 10px #000, 0 0 3px #000; }
 }
 @media (max-width: 600px) {
   .ring { aspect-ratio: auto; display: grid; gap: 14px; }
@@ -510,6 +537,11 @@ body.locked { overflow: hidden; }
   .realm-node .rn-label { position: static; margin: 0; text-align: left; white-space: normal; }
   .realm-node:hover, .realm-node.on { transform: none; }
   .pillars, .tenets, .perks { grid-template-columns: minmax(0, 1fr); }
+  .cards { gap: 36px 20px; }
+  .tcard { gap: 10px; }
+  .tc-art { aspect-ratio: 16 / 9; }
+  .tc-art .ticon { width: 30%; }
+  .tc-art .tc-gear { width: 70%; }
   .count b { font-size: 2rem; }
   .path li { grid-template-columns: 50px 1fr; gap: 12px; }
   .path li::before { left: 24px; }
