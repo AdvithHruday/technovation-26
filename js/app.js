@@ -22,14 +22,14 @@
   }
   function card(t) {
     const r = REALM[t.realm];
-    return `<article class="frame tcard" style="${rc(t.realm)}">${A.frameDeco()}
+    return `<article class="frame tcard${t.prize ? "" : " no-bar"}" style="${rc(t.realm)}">${A.frameDeco()}
       <div class="tc-art"><svg class="tc-gear" viewBox="0 0 200 200" aria-hidden="true"><path d="${A.gearPath(100, 100, 98, 88, 30)}"/><circle cx="100" cy="100" r="70" fill="none" stroke="currentColor"/></svg>${A.icon(t.icon)}
         <img src="assets/trials/${t.id}.webp" alt="" loading="lazy" onerror="this.remove()"></div>
       <div class="tc-tags"><span class="tag realm">${A.glyph(r.id)}${r.name}</span><span class="tag">${t.type}</span></div>
       <h3 class="tc-name">${esc(t.name)}</h3>
       <p class="tc-desc">${esc(t.desc)}</p>
       <div class="tc-btns"><a class="btn" href="#t-${t.id}">Explore</a>${regBtn(t, true)}</div>
-      <div class="tc-bar"><span>Prize pool</span><em>${t.prize ? esc(t.prize) : "Coming soon"}</em></div>
+      ${t.prize ? `<div class="tc-bar"><span>Prize pool</span><em>${esc(t.prize)}</em></div>` : ""}
     </article>`;
   }
   function path(items) {
@@ -82,16 +82,20 @@
       <img src="assets/logo-white.webp" alt="Technovation '26">
       <nav aria-label="Footer">${["realms", "trials", "chronicle", "guild", "patrons", "contact"].map(k => `<a href="#${k}">${k}</a>`).join("")}</nav>
       <small>${esc(T.fest.dept)} · ${esc(T.fest.college)}, ${esc(T.fest.place)}<br>${esc(T.fest.dates)}</small>
+      <small class="legal">© 2026 Technovation · ${esc(T.fest.dept)}, ${esc(T.fest.collegeShort)}</small>
     </footer>`;
   const counter = () => `<div class="count" id="count" role="timer" aria-label="Countdown to Day 1">
       <div><b data-k="d">--</b><span>Days</span></div><div><b data-k="h">--</b><span>Hours</span></div>
-      <div><b data-k="m">--</b><span>Minutes</span></div><div><b data-k="s">--</b><span>Seconds</span></div></div>`;
+      <div><b data-k="m">--</b><span>Minutes</span></div><div><b data-k="s">--</b><span>Seconds</span></div></div>
+      ${T.fest.startLabel ? `<p class="count-when" id="count-when">${esc(T.fest.startLabel)}</p>` : ""}`;
   function tick() {
     const el = $("#count"); if (!el) return;
     const diff = new Date(T.fest.startsAt) - Date.now();
     if (diff <= 0) {
-      const k = el.parentElement.querySelector(".kicker"); if (k) k.textContent = "Technovation is live";
-      el.outerHTML = `<p class="dv-title">The gates are open</p>`; return;
+      const over = T.fest.endsAt && Date.now() > new Date(T.fest.endsAt);
+      const k = el.parentElement.querySelector(".kicker"); if (k) k.textContent = over ? "Technovation ’26" : "Technovation is live";
+      const w = $("#count-when"); if (w) w.remove();
+      el.outerHTML = `<p class="dv-title">${over ? "Thank you for being part of it" : "The gates are open"}</p>`; return;
     }
     const v = { d: Math.floor(diff / 864e5), h: Math.floor(diff / 36e5) % 24, m: Math.floor(diff / 6e4) % 60, s: Math.floor(diff / 1e3) % 60 };
     $$("b", el).forEach(b => b.textContent = String(v[b.dataset.k]).padStart(2, "0"));
@@ -106,7 +110,7 @@
         <p class="hero-eyebrow">${esc(T.fest.dept)} · ${esc(T.fest.collegeShort)} presents</p>
         <h1 class="sr">Technovation ’26 — The Five Realms</h1>
         <img class="hero-logo" src="assets/logo-white.webp" alt="Technovation ’26 — Mechatronics">
-        <p class="hero-kick" aria-hidden="true">Technovation</p><p class="hero-title" aria-hidden="true">The Five Realms</p>
+        <p class="hero-kick" aria-hidden="true">The 2026 theme</p><p class="hero-title" aria-hidden="true">The Five Realms</p>
         <p class="hero-meta"><span>${esc(T.fest.dates)}</span><i class="dot"></i><span>${esc(T.fest.collegeShort)} · ${esc(T.fest.place)}</span></p>
         <div class="btn-row" style="justify-content:center;margin-top:10px">
           <a class="btn solid" href="#trials">View the trials</a><a class="btn" href="#realms">Choose your realm</a>
@@ -182,12 +186,14 @@
     <div class="wrap"><section class="sec" style="padding-top:20px">
       <div class="filters" role="group" aria-label="Filter by type">${["all", "Technical", "Non-technical"].map(k => `<button class="chip" data-f="type" data-v="${k}" aria-pressed="${filter.type === k}">${k === "all" ? "All trials" : k}</button>`).join("")}</div>
       <div class="filters" role="group" aria-label="Filter by realm"><button class="chip" data-f="realm" data-v="all" aria-pressed="${filter.realm === "all"}">All realms</button>${T.realms.map(r => `<button class="chip" style="${rc(r.id)}" data-f="realm" data-v="${r.id}" aria-pressed="${filter.realm === r.id}">${A.glyph(r.id)}${r.name}</button>`).join("")}</div>
+      <p class="result-count" id="trial-count" aria-live="polite"></p>
       <div class="cards" id="trial-grid"></div>
     </section></div>${footer()}`;
   function drawTrials() {
     const g = $("#trial-grid"); if (!g) return;
     const list = T.trials.filter(t => (filter.type === "all" || t.type === filter.type) && (filter.realm === "all" || t.realm === filter.realm));
     g.innerHTML = list.length ? list.map(card).join("") : `<p class="lede">No trials match these filters.</p>`;
+    const c = $("#trial-count"); if (c) c.textContent = `Showing ${list.length} of ${T.trials.length} trials`;
   }
 
   V.trial = id => {
@@ -212,13 +218,12 @@
             <div class="btn-row" style="margin-top:20px">${regBtn(t)}<a class="btn" href="#${r.id}">Back to ${r.name}</a></div>
           </div>
         </div>
-        <div class="facts">
-          <div class="fact"><span>Entry fee</span><b>${val(t.fee)}</b></div>
-          <div class="fact"><span>Prize pool</span><b>${val(t.prize)}</b></div>
-          <div class="fact"><span>Team size</span><b>${val(t.team)}</b></div>
-          <div class="fact"><span>Venue</span><b>${val(t.venue)}</b></div>
-          <div class="fact"><span>Timing</span><b>${t.time ? esc(t.time) : soon("16–17 Oct · time soon")}</b></div>
-        </div>
+        ${(() => {
+          const facts = [["Entry fee", t.fee], ["Prize pool", t.prize], ["Team size", t.team], ["Venue", t.venue], ["Timing", t.time]].filter(f => f[1]);
+          return facts.length
+            ? `<div class="facts">${facts.map(([k, v]) => `<div class="fact"><span>${k}</span><b>${esc(v)}</b></div>`).join("")}</div>`
+            : `<p class="facts-note">${T.fest.dates} · ${esc(T.fest.collegeShort)}, ${esc(T.fest.place)}<br><span>Fee, prize pool, team size, venue and timing will be announced here soon.</span></p>`;
+        })()}
         <div class="trial-grid">
           <div class="frame">${A.frameDeco()}<p class="kicker" style="color:var(--rc);margin-bottom:22px">Trial roadmap</p>${flow}</div>
           <div class="frame">${A.frameDeco()}<p class="kicker" style="color:var(--rc);margin-bottom:14px">Rules & judging</p><p style="color:var(--parch-dim)">The rulebook for this trial will be published here soon.</p>
@@ -296,7 +301,7 @@
     <div class="wrap" style="${rc("gold")}">
       <section class="sec" style="padding-top:20px"><div class="people">${T.contacts.map(c => `<div class="frame person">${A.frameDeco()}<p class="role">${esc(c.role)}</p><h3>${esc(c.name)}</h3><a class="phone" href="tel:${c.phone.replace(/\s/g, "")}">${esc(c.phone)}</a></div>`).join("")}</div></section>
       <section class="sec" style="padding-top:0"><div class="frame address">${A.frameDeco()}<p class="kicker">Find us</p><p>${esc(T.address)}</p>
-        <div class="btn-row" style="justify-content:center"><a class="btn" ${ext(T.website)}>mgit.ac.in <span class="arr">↗</span></a></div>
+        <div class="btn-row" style="justify-content:center"><a class="btn solid" ${ext(T.mapUrl)}>Get directions <span class="arr">↗</span></a><a class="btn" ${ext(T.website)}>mgit.ac.in <span class="arr">↗</span></a></div>
         <p style="margin-top:6px">${T.socials.length ? T.socials.map(s => `<a ${ext(s.url)}>${esc(s.name)}</a>`).join(" · ") : soon("Social handles coming soon")}</p></div></section>
     </div>${footer()}`;
 
@@ -351,6 +356,7 @@
   addEventListener("hashchange", () => { $("#hud-nav").classList.remove("open"); route(); });
 
   /* ---------- HUD ---------- */
+  $(".skip").addEventListener("click", e => { e.preventDefault(); view.focus(); view.scrollIntoView(); });
   $("#dock").innerHTML = T.realms.map(r => `<a class="dock-a" href="#${r.id}" data-realm="${r.id}" style="${rc(r.id)}" title="${r.name} · ${esc(r.pillar)}">${A.glyph(r.id)}${r.name}</a>`).join("");
   const st = $("#sound-toggle");
   function syncSound() { const on = AUDIO.isOn(); st.classList.toggle("sound-on", on); st.setAttribute("aria-label", on ? "Turn soundtrack off" : "Turn soundtrack on"); }
@@ -400,6 +406,7 @@
   ];
   (function gate() {
     const g = $("#gate"); document.body.classList.add("locked");
+    const behind = ["#hud-top", "#dock", "#view", ".skip"].map(q => $(q)); behind.forEach(n => n.inert = true); // nothing behind the gate is focusable
     $("#gate-sigil").innerHTML = A.sigil({ mono: true });
     const tip = $("#gate-tip"); let ti = Math.floor(Math.random() * TIPS.length); tip.textContent = TIPS[ti];
     const tipT = setInterval(() => { ti = (ti + 1) % TIPS.length; tip.textContent = TIPS[ti]; }, 3200);
@@ -416,6 +423,7 @@
     ready.then(() => { clearInterval(lt); bar.style.width = "100%"; setTimeout(() => { $("#gate-load").hidden = true; $("#gate-actions").hidden = false; $("#enter-sound").focus(); }, 350); });
     async function enter(sound) {
       if (g.classList.contains("leaving")) return;
+      behind.forEach(n => n.inert = false);
       // audio can fail (no Web Audio, iOS refusing to resume): never let that keep the gate shut
       if (sound) { try { await Promise.race([AUDIO.start(), new Promise(r => setTimeout(r, 2500))]); AUDIO.ui("click"); } catch (e) {} }
       syncSound();

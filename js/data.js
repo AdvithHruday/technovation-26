@@ -14,8 +14,11 @@ window.TV = {
     collegeShort: "MGIT",
     place: "Gandipet, Hyderabad",
     dates: "16 & 17 October 2026",
-    // Countdown target (IST). Change the time once Day 1 timing is final.
-    startsAt: "2026-10-16T00:00:00+05:30",
+    // Countdown target (IST). TODO: 9:15 AM is NOT confirmed yet. Update startsAt + startLabel when the schedule is final.
+    startsAt: "2026-10-16T09:15:00+05:30",
+    startLabel: "Friday, 16 October · 9:15 AM IST",
+    // After this the countdown switches to a thank-you message (end of Day 2 by default).
+    endsAt: "2026-10-17T23:59:59+05:30",
     blurb:
       "The Mechatronics department’s celebration of robotics, automation and engineering ideas at MGIT, with technical competitions, workshops and fun non-technical events."
   },
@@ -142,6 +145,7 @@ window.TV = {
   ],
   address: "Department of Mechatronics Engineering, Mahatma Gandhi Institute of Technology, Gandipet, Hyderabad – 500075, Telangana",
   website: "https://mgit.ac.in",
+  mapUrl: "https://www.google.com/maps/search/?api=1&query=Mahatma+Gandhi+Institute+of+Technology+Gandipet+Hyderabad",
 
   // Fill when finalised.
   sponsors: [],   // e.g. { name: "Acme", tier: "Gold", logo: "assets/sponsors/acme.png", url: "" }
