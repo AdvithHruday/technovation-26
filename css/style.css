@@ -394,6 +394,9 @@ body.locked { overflow: hidden; }
 .filters { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
 .chip { font: 600 .78rem/1 var(--f-hud); letter-spacing: .16em; text-transform: uppercase; padding: 11px 16px; cursor: pointer; background: rgba(12,10,14,.75); color: var(--parch-dim); border: 1px solid rgba(212,175,90,.3); display: inline-flex; gap: 8px; align-items: center; }
 .chip .glyph { width: 14px; height: 14px; stroke-width: 8; stroke: var(--rc); }
+.chip .n { font-size: .72rem; opacity: .65; margin-left: 6px; }
+.chip.empty { opacity: .45; }
+.empty-state { grid-column: 1 / -1; display: grid; justify-items: center; gap: 18px; text-align: center; padding: 30px 0; }
 .chip[aria-pressed="true"] { color: #120d06; background: var(--rc); border-color: var(--rc); }
 .chip[aria-pressed="true"] .glyph { stroke: #120d06; }
 

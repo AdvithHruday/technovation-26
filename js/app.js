@@ -184,15 +184,24 @@
       <p class="realm-line">Technical and non-technical events for builders, pilots and thinkers. All trials are paid events. Fees, prizes and timings will be announced soon.</p>
     </section>
     <div class="wrap"><section class="sec" style="padding-top:20px">
-      <div class="filters" role="group" aria-label="Filter by type">${["all", "Technical", "Non-technical"].map(k => `<button class="chip" data-f="type" data-v="${k}" aria-pressed="${filter.type === k}">${k === "all" ? "All trials" : k}</button>`).join("")}</div>
-      <div class="filters" role="group" aria-label="Filter by realm"><button class="chip" data-f="realm" data-v="all" aria-pressed="${filter.realm === "all"}">All realms</button>${T.realms.map(r => `<button class="chip" style="${rc(r.id)}" data-f="realm" data-v="${r.id}" aria-pressed="${filter.realm === r.id}">${A.glyph(r.id)}${r.name}</button>`).join("")}</div>
+      <div class="filters" role="group" aria-label="Filter by type">${["all", "Technical", "Non-technical"].map(k => `<button class="chip" data-f="type" data-v="${k}" aria-pressed="${filter.type === k}">${k === "all" ? "All trials" : k}<span class="n"></span></button>`).join("")}</div>
+      <div class="filters" role="group" aria-label="Filter by realm"><button class="chip" data-f="realm" data-v="all" aria-pressed="${filter.realm === "all"}">All realms<span class="n"></span></button>${T.realms.map(r => `<button class="chip" style="${rc(r.id)}" data-f="realm" data-v="${r.id}" aria-pressed="${filter.realm === r.id}">${A.glyph(r.id)}${r.name}<span class="n"></span></button>`).join("")}</div>
       <p class="result-count" id="trial-count" aria-live="polite"></p>
       <div class="cards" id="trial-grid"></div>
     </section></div>${footer()}`;
+  const match = (t, f) => (f.type === "all" || t.type === f.type) && (f.realm === "all" || t.realm === f.realm);
   function drawTrials() {
     const g = $("#trial-grid"); if (!g) return;
-    const list = T.trials.filter(t => (filter.type === "all" || t.type === filter.type) && (filter.realm === "all" || t.realm === filter.realm));
-    g.innerHTML = list.length ? list.map(card).join("") : `<p class="lede">No trials match these filters.</p>`;
+    const list = T.trials.filter(t => match(t, filter));
+    // each chip shows how many trials you'd get if you picked it, given the OTHER filter; empty combos are dimmed
+    $$(".chip").forEach(c => {
+      const f = c.dataset.f, v = c.dataset.v, n = T.trials.filter(t => match(t, { ...filter, [f]: v })).length;
+      c.setAttribute("aria-pressed", filter[f] === v); c.classList.toggle("empty", n === 0 && v !== "all");
+      const el = $(".n", c); if (el) el.textContent = n;
+    });
+    const label = { all: "", Technical: "technical ", "Non-technical": "non-technical " }[filter.type] || "";
+    g.innerHTML = list.length ? list.map(card).join("") : `<div class="empty-state"><p class="lede">No ${label}trials in ${filter.realm === "all" ? "any realm" : REALM[filter.realm].name} yet.</p><button class="btn" id="reset-filters">Show all trials</button></div>`;
+    const rb = $("#reset-filters"); if (rb) rb.onclick = () => { filter = { type: "all", realm: "all" }; drawTrials(); };
     const c = $("#trial-count"); if (c) c.textContent = `Showing ${list.length} of ${T.trials.length} trials`;
   }
 
@@ -341,7 +350,7 @@
     window.scrollTo({ top: 0, behavior: "instant" });
     if (r.v === "home") { tick(); timers.push(setInterval(tick, 1000)); $("#cue").onclick = () => $("#s-count").scrollIntoView({ behavior: "smooth" }); }
     if (r.v === "home" || r.v === "realms") bindRing(r.mode);
-    if (r.v === "trials") { drawTrials(); $$(".chip").forEach(c => c.onclick = () => { filter[c.dataset.f] = c.dataset.v; $$(`.chip[data-f="${c.dataset.f}"]`).forEach(x => x.setAttribute("aria-pressed", x === c)); drawTrials(); }); }
+    if (r.v === "trials") { drawTrials(); $$(".chip").forEach(c => c.onclick = () => { filter[c.dataset.f] = c.dataset.v; drawTrials(); }); }
     $$(".frame, .realm-hero, .hero-inner").forEach((el, i) => { el.classList.add("rise"); el.style.animationDelay = Math.min(i, 6) * 60 + "ms"; });
     if (!first) {
       setTimeout(() => $("#travel").classList.remove("on"), 120);
