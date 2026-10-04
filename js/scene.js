@@ -277,7 +277,7 @@
         p.x += p.vx + Math.sin(t * 0.8 + p.wob) * 0.25; p.y += p.vy;
         const k = p.life / p.max, a = Math.sin(Math.PI * Math.min(1, k)) * (kind === "dust" ? 0.5 : 0.95);
         fctx.fillStyle = `rgba(${cr},${cg - (kind === "fire" ? k * 60 : 0)},${cb},${a})`;
-        if (kind !== "dust") { fctx.shadowBlur = 8; fctx.shadowColor = `rgba(${cr},${cg},${cb},.8)`; }
+        if (kind !== "dust" && !TOUCH) { fctx.shadowBlur = 8; fctx.shadowColor = `rgba(${cr},${cg},${cb},.8)`; }
         fctx.beginPath(); fctx.arc(p.x, p.y, p.s, 0, 6.283); fctx.fill(); fctx.shadowBlur = 0;
         if (p.life > p.max || p.y < -20 || p.x > W + 20) parts[i] = spawn(kind);
       } else if (kind === "water") {
@@ -357,7 +357,7 @@
   function stop() { running = false; cancelAnimationFrame(raf); }
 
   async function set(page) {
-    const m = THEMES[page] ? page : (ALIAS[page] || "home");
+    const m = Object.prototype.hasOwnProperty.call(THEMES, page) ? page : (ALIAS[page] || "home");
     if (m === mode) return;
     mode = m;
     paintInto(back, m);

@@ -18,7 +18,7 @@ Everything lives in `js/data.js`:
 - Soundtrack: `assets/audio/theme.mp3` replaces the generated score.
 
 ## Run locally
-`python3 -m http.server 8000` then open http://localhost:8000
+`python -m http.server 8000` (`python3` on Mac/Linux) then open http://localhost:8000. To test on a phone on the same Wi-Fi, open `http://<your-PC-IP>:8000` instead.
 
 ## Deploy free on Cloudflare Pages
 1. Push this folder to a GitHub repo.

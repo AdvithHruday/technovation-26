@@ -70,7 +70,12 @@
       core.innerHTML = `<p class="kicker">${esc(r.sanskrit)} · ${esc(r.epithet)}</p><p class="rc-name">${r.name}</p><p class="rc-pillar">${esc(r.pillar)}</p><p class="rc-line">${esc(r.line)}</p><p class="rc-count">${trialsOf(id).length} ${trialsOf(id).length === 1 ? "trial" : "trials"} · Enter ›</p>`;
       clearTimeout(tm); tm = setTimeout(() => { SCENE.set(id); AUDIO.setRealm(id); }, 120);
     };
-    $$(".realm-node", el).forEach(n => { n.addEventListener("pointerenter", () => show(n.dataset.realm)); n.addEventListener("focus", () => show(n.dataset.realm)); });
+    // Hover preview is mouse/keyboard only: on touch, pointerenter fires on the tap itself, and swapping the
+    // core text made the whole list jump under the finger (missed/mis-routed taps).
+    $$(".realm-node", el).forEach(n => {
+      n.addEventListener("pointerenter", e => { if (e.pointerType === "mouse") show(n.dataset.realm); });
+      n.addEventListener("focus", () => { if (n.matches(":focus-visible")) show(n.dataset.realm); });
+    });
     el.addEventListener("pointerleave", () => { clearTimeout(tm); tm = setTimeout(() => { el.style.cssText = rc("gold"); core.innerHTML = def; $$(".realm-node", el).forEach(n => n.classList.remove("on")); SCENE.set(baseMode); AUDIO.setRealm(baseMode); }, 500); });
   }
   const footer = () => `<footer class="foot">
@@ -84,7 +89,10 @@
   function tick() {
     const el = $("#count"); if (!el) return;
     const diff = new Date(T.fest.startsAt) - Date.now();
-    if (diff <= 0) { el.outerHTML = `<p class="dv-title">The gates are open</p>`; return; }
+    if (diff <= 0) {
+      const k = el.parentElement.querySelector(".kicker"); if (k) k.textContent = "Technovation is live";
+      el.outerHTML = `<p class="dv-title">The gates are open</p>`; return;
+    }
     const v = { d: Math.floor(diff / 864e5), h: Math.floor(diff / 36e5) % 24, m: Math.floor(diff / 6e4) % 60, s: Math.floor(diff / 1e3) % 60 };
     $$("b", el).forEach(b => b.textContent = String(v[b.dataset.k]).padStart(2, "0"));
   }
@@ -198,7 +206,7 @@
         <div class="trial-head">
           <div class="trial-emblem">${A.medallion(t.realm)}${A.icon(t.icon)}</div>
           <div>
-            <div class="tc-tags" style="justify-content:flex-start"><span class="tag realm">${A.glyph(r.id)}${r.name} · ${esc(r.pillar)}</span><span class="tag">${t.type}</span><span class="tag">Paid event</span></div>
+            <div class="tc-tags"><span class="tag realm">${A.glyph(r.id)}${r.name} · ${esc(r.pillar)}</span><span class="tag">${t.type}</span><span class="tag">Paid event</span></div>
             <h1 class="trial-name">${esc(t.name)}</h1>
             <p class="lede">${esc(t.desc)}</p>
             <div class="btn-row" style="margin-top:20px">${regBtn(t)}<a class="btn" href="#${r.id}">Back to ${r.name}</a></div>
@@ -276,7 +284,7 @@
       <section class="sec" style="padding-top:20px">${A.divider("Become a Patron")}
         <div class="perks">${PERKS.map(([k, v]) => `<div class="perk"><h4>${k}</h4><p>${v}</p></div>`).join("")}</div>
         <div class="tiers">${TIERS.map(([n, c, d]) => `<div class="tier" style="--tc:${c}"><span class="gem"></span><h4>${n}</h4><p>${d}</p></div>`).join("")}</div>
-        ${lead ? `<div class="frame address">${A.frameDeco()}<p class="kicker">Talk to us</p><h3 class="tc-name">${esc(lead.name)} · ${esc(lead.role)}</h3><a class="person phone" href="tel:${lead.phone.replace(/\s/g, "")}" style="font:600 1.2rem var(--f-hud)">${esc(lead.phone)}</a><p>Early sponsors get first pick of tier and branding placement.</p></div>` : ""}
+        ${lead ? `<div class="frame address">${A.frameDeco()}<p class="kicker">Talk to us</p><h3 class="tc-name">${esc(lead.name)} · ${esc(lead.role)}</h3><a class="phone" href="tel:${lead.phone.replace(/\s/g, "")}" style="font:600 1.2rem var(--f-hud)">${esc(lead.phone)}</a><p>Early sponsors get first pick of tier and branding placement.</p></div>` : ""}
       </section></div>${footer()}`;
   };
 
@@ -293,11 +301,14 @@
     </div>${footer()}`;
 
   /* ---------- router ---------- */
+  const has = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
   function parse() {
-    const h = decodeURIComponent(location.hash.slice(1)) || "home";
-    if (REALM[h]) return { v: "realm", id: h, mode: h, nav: "realms", title: `${REALM[h].name} · ${REALM[h].pillar}` };
-    if (h.startsWith("t-") && TRIAL[h.slice(2)]) { const t = TRIAL[h.slice(2)]; return { v: "trial", id: t.id, mode: t.realm, nav: "trials", title: t.name }; }
-    if (V[h] && h !== "realm" && h !== "trial") return { v: h, mode: h, nav: h, title: h[0].toUpperCase() + h.slice(1) };
+    let h = "";
+    try { h = decodeURIComponent(location.hash.slice(1)); } catch (e) { /* malformed hash -> home */ }
+    h = h || "home";
+    if (has(REALM, h)) return { v: "realm", id: h, mode: h, nav: "realms", title: `${REALM[h].name} · ${REALM[h].pillar}` };
+    if (h.startsWith("t-") && has(TRIAL, h.slice(2))) { const t = TRIAL[h.slice(2)]; return { v: "trial", id: t.id, mode: t.realm, nav: "trials", title: t.name }; }
+    if (has(V, h) && h !== "realm" && h !== "trial") return { v: h, mode: h, nav: h, title: h[0].toUpperCase() + h.slice(1) };
     return { v: "home", mode: "home", nav: "", title: "" };
   }
   const seen = {};
@@ -305,6 +316,11 @@
   async function route() {
     const r = parse();
     if (busy) return; busy = true;
+    // if anything below throws, don't leave the router locked and the travel overlay covering the page
+    try { await render(r); } finally { first = false; busy = false; $("#travel").classList.remove("on"); }
+    if (parse().v !== r.v || parse().id !== r.id) route();
+  }
+  async function render(r) {
     $("#discover").classList.remove("on");
     if (!first) {
       $("#travel-text").textContent = r.v === "realm" ? `Travelling to ${REALM[r.id].name}` : r.v === "trial" ? `Entering the trial` : "Travelling";
@@ -327,8 +343,6 @@
       if (r.v === "realm" && !seen[r.id]) { seen[r.id] = 1; setTimeout(() => discover("Realm discovered", `${REALM[r.id].name} · ${REALM[r.id].epithet}`), 500); }
       view.focus({ preventScroll: true });
     }
-    first = false; busy = false;
-    if (parse().v !== r.v || parse().id !== r.id) route();
   }
   function discover(k, t) {
     const d = $("#discover"); $("#disc-kicker").textContent = k; $("#disc-title").textContent = t;
@@ -339,11 +353,13 @@
   /* ---------- HUD ---------- */
   $("#dock").innerHTML = T.realms.map(r => `<a class="dock-a" href="#${r.id}" data-realm="${r.id}" style="${rc(r.id)}" title="${r.name} · ${esc(r.pillar)}">${A.glyph(r.id)}${r.name}</a>`).join("");
   const st = $("#sound-toggle");
-  function syncSound() { const on = AUDIO.isOn(); st.classList.toggle("sound-on", on); st.setAttribute("aria-label", on ? "Turn soundtrack off" : "Turn soundtrack on"); st.setAttribute("aria-pressed", on); }
-  st.onclick = async () => { AUDIO.isOn() ? AUDIO.stop() : await AUDIO.start(); syncSound(); };
+  function syncSound() { const on = AUDIO.isOn(); st.classList.toggle("sound-on", on); st.setAttribute("aria-label", on ? "Turn soundtrack off" : "Turn soundtrack on"); }
+  st.onclick = async () => { try { AUDIO.isOn() ? AUDIO.stop() : await AUDIO.start(); } catch (e) {} syncSound(); };
   $("#hud-nav").insertAdjacentHTML("beforeend", `<div class="nav-realms">${T.realms.map(r => `<a href="#${r.id}" style="${rc(r.id)}">${A.glyph(r.id)}${r.name}</a>`).join("")}</div>`);
   function menu(open) { $("#hud-nav").classList.toggle("open", open); document.body.classList.toggle("menu-open", open); $("#menu-toggle").setAttribute("aria-expanded", open); $("#menu-toggle").setAttribute("aria-label", open ? "Close menu" : "Open menu"); }
   $("#menu-toggle").onclick = () => menu(!$("#hud-nav").classList.contains("open"));
+  // tapping the link for the page you're already on doesn't fire hashchange, so close the menu on any link tap
+  $("#hud-nav").addEventListener("click", e => { if (e.target.closest("a")) menu(false); });
   addEventListener("keydown", e => { if (e.key === "Escape") menu(false); });
   addEventListener("hashchange", () => menu(false));
   let lastHover = 0;
@@ -356,21 +372,17 @@
   /* ---------- drone mascot ---------- */
   (function () {
     const el = $("#drone"); el.innerHTML = A.drone;
-    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    let x = innerWidth - 120, y = innerHeight - 150, tx = x, ty = y, px = x, idle = 0, touchT = 0;
-    const home = () => { tx = innerWidth - (innerWidth < 880 ? 70 : 120); ty = innerHeight - (innerWidth < 880 ? 110 : 150); };
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches || matchMedia("(hover: none)").matches) return; // hidden on touch screens (see CSS)
+    let x = innerWidth - 120, y = innerHeight - 150, tx = x, ty = y, px = x, idle = 0, w = el.offsetWidth;
+    const home = () => { w = el.offsetWidth; tx = innerWidth - (innerWidth < 880 ? 70 : 120); ty = innerHeight - (innerWidth < 880 ? 110 : 150); };
     addEventListener("pointermove", e => { if (e.pointerType === "mouse") { tx = e.clientX + 30; ty = e.clientY + 22; idle = 0; } }, { passive: true });
-    const touchFollow = e => { if (e.pointerType !== "mouse") { tx = e.clientX; ty = e.clientY - 80; touchT = performance.now(); } };
-    addEventListener("pointerdown", touchFollow, { passive: true });
-    addEventListener("pointermove", touchFollow, { passive: true });
-    addEventListener("touchmove", e => { const t = e.touches[0]; if (t) { tx = t.clientX; ty = t.clientY - 80; touchT = performance.now(); } }, { passive: true });
     addEventListener("resize", home);
+    home();
     function f(now) {
-      if (touchT && now - touchT > 1800) { touchT = 0; home(); }
       if (++idle > 600) { tx += Math.sin(now / 900) * 0.6; }
       x += (tx - x) * 0.075; y += (ty - y) * 0.075;
       const vx = x - px; px = x;
-      const w = el.offsetWidth, bob = Math.sin(now / 320) * 4;
+      const bob = Math.sin(now / 320) * 4;
       const cx = Math.max(4, Math.min(innerWidth - w - 4, x - w / 2)), cy = Math.max(4, Math.min(innerHeight - w * 0.7, y + bob));
       el.style.transform = `translate3d(${cx}px,${cy}px,0) rotate(${Math.max(-20, Math.min(20, vx * 1.6))}deg)`;
       requestAnimationFrame(f);
@@ -404,7 +416,8 @@
     ready.then(() => { clearInterval(lt); bar.style.width = "100%"; setTimeout(() => { $("#gate-load").hidden = true; $("#gate-actions").hidden = false; $("#enter-sound").focus(); }, 350); });
     async function enter(sound) {
       if (g.classList.contains("leaving")) return;
-      if (sound) { await AUDIO.start(); AUDIO.ui("click"); }
+      // audio can fail (no Web Audio, iOS refusing to resume): never let that keep the gate shut
+      if (sound) { try { await Promise.race([AUDIO.start(), new Promise(r => setTimeout(r, 2500))]); AUDIO.ui("click"); } catch (e) {} }
       syncSound();
       g.classList.add("leaving"); document.body.classList.remove("locked");
       setTimeout(() => { run = false; clearInterval(tipT); g.remove(); if (parse().v === "home") discover("Welcome, challenger", "Technovation · The Five Realms"); }, 1100);

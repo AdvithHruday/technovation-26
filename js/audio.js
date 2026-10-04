@@ -123,5 +123,12 @@
     if (kind === "discover") { bell(t, 62, 0.12); bell(t + 0.18, 69, 0.1); bell(t + 0.36, 74, 0.1); }
   }
 
+  // Phones: stop the score when the tab is hidden / screen locks, and resume when back (timers are throttled in the background, so it would stutter and drift otherwise).
+  document.addEventListener("visibilitychange", () => {
+    if (!ctx) return;
+    if (document.hidden) { ctx.suspend(); if (fileEl) fileEl.pause(); }
+    else if (on) { ctx.resume(); if (fileEl) fileEl.play().catch(() => {}); }
+  });
+
   window.AUDIO = { start, stop, toggle: () => (on ? stop() : start(), on), isOn: () => on, setRealm, ui };
 })();
